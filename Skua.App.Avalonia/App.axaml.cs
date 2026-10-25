@@ -587,7 +587,10 @@ public partial class App : Application
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop || desktop.MainWindow is null)
             return;
-        desktop.MainWindow.Hide();
+        // Minimize the owner instead of hiding it directly. The embedded game HWNDs
+        // are separate top-level windows owned by the host; Windows hides owned windows
+        // with the owner while preserving the Flash renderer for a clean restore.
+        desktop.MainWindow.WindowState = WindowState.Minimized;
     }
 
     private static TrayIcon? _trayIcon;

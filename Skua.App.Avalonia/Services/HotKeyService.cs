@@ -96,6 +96,7 @@ public class HotKeyService : IHotKeyService, IDisposable
         StringCollection hotkeys = _settingsService.Get<StringCollection>("HotKeys") ?? new StringCollection();
         EnsureDefaultBindingsExist(hotkeys);
 
+        Dictionary<string, IRelayCommand> registeredActions = global::Skua.Core.AppStartup.HotKeys.GetRegistry();
         List<T> parsed = [];
         StringCollection cleaned = new();
 
@@ -108,7 +109,7 @@ public class HotKeyService : IHotKeyService, IDisposable
             string binding = split[0];
             string gesture = split.Length > 1 ? split[1] : string.Empty;
 
-            if (!_hotKeys.ContainsKey(binding))
+            if (!_hotKeys.ContainsKey(binding) && !registeredActions.ContainsKey(binding))
                 continue;
 
             if (!string.IsNullOrWhiteSpace(gesture) && !gesture.Equals("Unassigned", StringComparison.OrdinalIgnoreCase))
@@ -131,7 +132,7 @@ public class HotKeyService : IHotKeyService, IDisposable
                 string[] split = hk.Split('|');
                 string binding = split[0];
                 string gesture = split.Length > 1 ? split[1] : string.Empty;
-                if (_hotKeys.ContainsKey(binding))
+                if (_hotKeys.ContainsKey(binding) || registeredActions.ContainsKey(binding))
                 {
                     parsed.Add(new()
                     {

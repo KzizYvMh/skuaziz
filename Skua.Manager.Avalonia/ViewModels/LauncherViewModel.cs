@@ -158,12 +158,27 @@ public partial class LauncherViewModel : BotControlViewModelBase, IDisposable
 
     public void KillAllSkuaProcesses()
     {
-        Task.Factory.StartNew(() =>
+        _ = Task.Run(async () =>
         {
-            foreach (ProcessInfo procInfo in SkuaProcesses)
+            List<ProcessInfo> processes = new();
+            _dispatcherService.Invoke(() => processes = SkuaProcesses.ToList());
+
+            foreach (ProcessInfo procInfo in processes)
             {
-                procInfo.Process.Kill();
-                _dispatcherService.Invoke(() => SkuaProcesses.Remove(procInfo));
+                try
+                {
+                    if (!procInfo.Process.HasExited)
+                    {
+                        procInfo.Process.Kill();
+                        await procInfo.Process.WaitForExitAsync();
+                    }
+
+                    _dispatcherService.Invoke(() => SkuaProcesses.Remove(procInfo));
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"Failed to stop process {procInfo.Process.Id}: {ex.Message}");
+                }
             }
         });
     }
@@ -192,10 +207,22 @@ public partial class LauncherViewModel : BotControlViewModelBase, IDisposable
         if (procInfo == null)
             return;
 
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
-            procInfo.Process.Kill();
-            _dispatcherService.Invoke(() => SkuaProcesses.Remove(procInfo));
+            try
+            {
+                if (!procInfo.Process.HasExited)
+                {
+                    procInfo.Process.Kill();
+                    await procInfo.Process.WaitForExitAsync();
+                }
+
+                _dispatcherService.Invoke(() => SkuaProcesses.Remove(procInfo));
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Failed to stop process: {ex}");
+            }
         });
     }
 
