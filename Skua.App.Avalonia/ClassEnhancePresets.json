@@ -15,14 +15,14 @@
  },
  "Phantom Chronomancer": {
   "Base": "Lucky",
-  "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Examen"
  },
  "abyssal angel": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Pneuma"
@@ -43,14 +43,14 @@
  },
  "alpha doommega": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
+  "WeaponForge": "Dauntless",
   "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
   "Helm": "Vim"
  },
  "alpha omega": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
+  "WeaponForge": "Dauntless",
   "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
   "Helm": "Vim"
@@ -71,17 +71,17 @@
  },
  "arachnomancer": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Mana_Vamp",
-  "Cape": "Penitence",
+  "Cape": "Lament",
   "Helm": "Vim"
  },
  "arcana invoker": {
-  "Base": "Wizard",
+  "Base": "Hybrid",
   "WeaponForge": "Ravenous",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
-  "Helm": "Pneuma"
+  "Helm": "Examen"
  },
  "arcane dark caster": {
   "Base": "Wizard",
@@ -92,38 +92,38 @@
  },
  "archfiend": {
   "Base": "Lucky",
-  "WeaponForge": "Valiance",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Health_Vamp",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
  "archivist of time": {
   "Base": "Wizard",
-  "WeaponForge": "Valiance",
+  "WeaponForge": "Dauntless",
   "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Pneuma"
+  "Helm": "Forge"
  },
  "archmage": {
   "Base": "Wizard",
-  "WeaponForge": "Ravenous",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
  "archpaladin": {
   "Base": "Lucky",
   "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Penitence",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Lament",
   "Helm": "Forge"
  },
  "artifact hunter": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Pneuma"
+  "Helm": "Vim"
  },
  "assassin": {
   "Base": "Lucky",
@@ -144,7 +144,7 @@
   "WeaponForge": "Valiance",
   "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Pneuma"
  },
  "battlemage": {
   "Base": "Wizard",
@@ -204,9 +204,9 @@
  },
  "blaze binder": {
   "Base": "Wizard",
-  "WeaponForge": "Acheron",
+  "WeaponForge": "Elysium",
   "WeaponAwe": "Awe_Blast",
-  "Cape": "Avarice",
+  "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
  "blood ancient": {
@@ -224,11 +224,11 @@
   "Helm": "Pneuma"
  },
  "blood titan": {
-  "Base": "Lucky",
-  "WeaponForge": "Dauntless",
-  "WeaponAwe": "Spiral_Carve",
+  "Base": "Fighter",
+  "WeaponForge": "Praxis",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Hearty"
  },
  "cardclasher": {
   "Base": "Lucky",
@@ -240,7 +240,7 @@
  "chaos avenger": {
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
-  "WeaponAwe": "Mana_Vamp",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -263,14 +263,14 @@
   "WeaponForge": "Elysium",
   "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
-  "Helm": "Vim"
+  "Helm": "Examen"
  },
  "chaos slayer": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
+  "WeaponForge": "Acheron",
   "WeaponAwe": "Spiral_Carve",
-  "Cape": "Avarice",
-  "Helm": "Anima"
+  "Cape": "Lament",
+  "Helm": "Vim"
  },
  "chaos slayer berserker": {
   "Base": "Lucky",
@@ -344,7 +344,7 @@
  },
  "chrono shadowslayer": {
   "Base": "Lucky",
-  "WeaponForge": "Ravenous",
+  "WeaponForge": "Arcanas_Concerto",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
   "Helm": "Vim"
@@ -366,7 +366,7 @@
  "chronomancer": {
   "Base": "Lucky",
   "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -381,8 +381,8 @@
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
   "WeaponAwe": "Spiral_Carve",
-  "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Cape": "Lament",
+  "Helm": "Vim"
  },
  "classic alpha pirate": {
   "Base": "Lucky",
@@ -449,7 +449,7 @@
  },
  "classic ninja": {
   "Base": "Thief",
-  "WeaponForge": "Lacerate",
+  "WeaponForge": "Dauntless",
   "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
   "Helm": "Vim"
@@ -505,7 +505,7 @@
  },
  "cryomancer": {
   "Base": "Wizard",
-  "WeaponForge": "Ravenous",
+  "WeaponForge": "Valiance",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Pneuma"
@@ -576,7 +576,7 @@
  "dark lord": {
   "Base": "Wizard",
   "WeaponForge": "Elysium",
-  "WeaponAwe": "Health_Vamp",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Avarice",
   "Helm": "Pneuma"
  },
@@ -603,15 +603,15 @@
  },
  "darkblood stormking": {
   "Base": "Wizard",
-  "WeaponForge": "Ravenous",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
-  "Helm": "Pneuma"
+  "Helm": "Forge"
  },
  "darklord": {
   "Base": "Wizard",
   "WeaponForge": "Ravenous",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
@@ -632,7 +632,7 @@
  "deathknight lord": {
   "Base": "Lucky",
   "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -652,9 +652,9 @@
  },
  "doom metal necro": {
   "Base": "Lucky",
-  "WeaponForge": "Lacerate",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Lament",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Penitence",
   "Helm": "Forge"
  },
  "doomknight": {
@@ -681,8 +681,8 @@
  "dragon of time": {
   "Base": "Healer",
   "WeaponForge": "Elysium",
-  "WeaponAwe": "Health_Vamp",
-  "Cape": "Avarice",
+  "WeaponAwe": "Awe_Blast",
+  "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
  "dragon shinobi": {
@@ -702,14 +702,14 @@
  "dragonslayer": {
   "Base": "Lucky",
   "WeaponForge": "Valiance",
-  "WeaponAwe": "Health_Vamp",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
  "dragonslayer general": {
   "Base": "Lucky",
   "WeaponForge": "Valiance",
-  "WeaponAwe": "Mana_Vamp",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -739,7 +739,7 @@
   "WeaponForge": "Dauntless",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "enchanted vampire lord": {
   "Base": "Wizard",
@@ -749,11 +749,11 @@
   "Helm": "Pneuma"
  },
  "enforcer": {
-  "Base": "Lucky",
-  "WeaponForge": "Valiance",
-  "WeaponAwe": "Health_Vamp",
+  "Base": "Fighter",
+  "WeaponForge": "Praxis",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Vim"
  },
  "eternal chronomancer": {
   "Base": "Lucky",
@@ -764,8 +764,8 @@
  },
  "eternal inversionist": {
   "Base": "Lucky",
-  "WeaponForge": "Valiance",
-  "WeaponAwe": "Health_Vamp",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -848,9 +848,9 @@
  },
  "frostval barbarian": {
   "Base": "Fighter",
-  "WeaponForge": "Ravenous",
+  "WeaponForge": "Valiance",
   "WeaponAwe": "Awe_Blast",
-  "Cape": "Absolution",
+  "Cape": "Vainglory",
   "Helm": "Anima"
  },
  "glaceran warlord": {
@@ -885,8 +885,8 @@
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
   "WeaponAwe": "Spiral_Carve",
-  "Cape": "Lament",
-  "Helm": "Vim"
+  "Cape": "Vainglory",
+  "Helm": "Examen"
  },
  "grim necromancer": {
   "Base": "Wizard",
@@ -904,10 +904,10 @@
  },
  "guardian": {
   "Base": "Lucky",
-  "WeaponForge": "Valiance",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Vim"
  },
  "healer": {
   "Base": "Healer",
@@ -960,10 +960,10 @@
  },
  "hollowborn vindicator": {
   "Base": "Lucky",
-  "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Vainglory",
-  "Helm": "Anima"
+  "WeaponForge": "Praxis",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Penitence",
+  "Helm": "Forge"
  },
  "hollowborn vindicator member preview": {
   "Base": "Lucky",
@@ -1009,16 +1009,16 @@
  },
  "infinite legion dark caster": {
   "Base": "Lucky",
-  "WeaponForge": "Dauntless",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "infinity knight": {
   "Base": "Wizard",
   "WeaponForge": "Acheron",
   "WeaponAwe": "Awe_Blast",
-  "Cape": "Forge",
+  "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
  "infinity titan": {
@@ -1035,10 +1035,17 @@
   "Cape": "Penitence",
   "Helm": "Pneuma"
  },
+ "kathool adept": {
+  "Base": "Wizard",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Vainglory",
+  "Helm": "Pneuma"
+ },
  "king's echo": {
-  "Base": "Healer",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Mana_Vamp",
+  "Base": "Lucky",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
   "Helm": "Examen"
  },
@@ -1057,10 +1064,10 @@
   "Helm": "Vim"
  },
  "legendary hero": {
-  "Base": "Wizard",
-  "WeaponForge": "Ravenous",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Absolution",
+  "Base": "Lucky",
+  "WeaponForge": "Valiance",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Lament",
   "Helm": "Forge"
  },
  "legendary naval commander": {
@@ -1099,17 +1106,17 @@
   "Helm": "Anima"
  },
  "legion paladin": {
-  "Base": "Wizard",
-  "WeaponForge": "Ravenous",
+  "Base": "Lucky",
+  "WeaponForge": "Dauntless",
   "WeaponAwe": "Spiral_Carve",
-  "Cape": "Vainglory",
-  "Helm": "Pneuma"
+  "Cape": "Lament",
+  "Helm": "Forge"
  },
  "legion revenant": {
   "Base": "Wizard",
-  "WeaponForge": "Ravenous",
+  "WeaponForge": "Arcanas_Concerto",
   "WeaponAwe": "Spiral_Carve",
-  "Cape": "Vainglory",
+  "Cape": "Lament",
   "Helm": "Pneuma"
  },
  "legion revenant (ioda)": {
@@ -1129,9 +1136,9 @@
  "legion swordmaster assassin": {
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "leprechaun": {
   "Base": "Lucky",
@@ -1141,9 +1148,9 @@
   "Helm": "Anima"
  },
  "lich": {
-  "Base": "Wizard",
+  "Base": "Lucky",
   "WeaponForge": "Ravenous",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
   "Helm": "Examen"
  },
@@ -1152,7 +1159,7 @@
   "WeaponForge": "Praxis",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
-  "Helm": "Pneuma"
+  "Helm": "Forge"
  },
  "lightcaster test": {
   "Base": "Wizard",
@@ -1172,7 +1179,7 @@
   "Base": "Lucky",
   "WeaponForge": "Arcanas_Concerto",
   "WeaponAwe": "Awe_Blast",
-  "Cape": "Penitence",
+  "Cape": "Absolution",
   "Helm": "Forge"
  },
  "love caster": {
@@ -1205,8 +1212,8 @@
  },
  "martial artist": {
   "Base": "Lucky",
-  "WeaponForge": "Dauntless",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Vim"
  },
@@ -1219,29 +1226,29 @@
  },
  "master of moglins": {
   "Base": "Wizard",
-  "WeaponForge": "Acheron",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Penitence",
+  "WeaponForge": "Elysium",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Avarice",
   "Helm": "Pneuma"
  },
  "master ranger": {
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponAwe": "Health_Vamp",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
  "mechajouster": {
   "Base": "Lucky",
-  "WeaponForge": "Dauntless",
+  "WeaponForge": "Praxis",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "mindbreaker": {
-  "Base": "Wizard",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Health_Vamp",
+  "Base": "Lucky",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Avarice",
   "Helm": "Pneuma"
  },
@@ -1261,9 +1268,9 @@
  },
  "naval commander": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Mana_Vamp",
-  "Cape": "Vainglory",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Lament",
   "Helm": "Vim"
  },
  "nechronomancer": {
@@ -1282,10 +1289,10 @@
  },
  "necrotic chronomancer": {
   "Base": "Lucky",
-  "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Health_Vamp",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Vim"
  },
  "neo metal necro": {
   "Base": "Lucky",
@@ -1295,9 +1302,9 @@
   "Helm": "Forge"
  },
  "ninja": {
-  "Base": "Thief",
-  "WeaponForge": "Lacerate",
-  "WeaponAwe": "Mana_Vamp",
+  "Base": "Lucky",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Vim"
  },
@@ -1324,10 +1331,10 @@
  },
  "northlands monk": {
   "Base": "Wizard",
-  "WeaponForge": "Acheron",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Penitence",
-  "Helm": "Pneuma"
+  "WeaponForge": "Valiance",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Lament",
+  "Helm": "Examen"
  },
  "not a mod": {
   "Base": "Lucky",
@@ -1373,16 +1380,16 @@
  },
  "paladin": {
   "Base": "Lucky",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Mana_Vamp",
-  "Cape": "Vainglory",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Lament",
   "Helm": "Vim"
  },
  "paladin chronomancer": {
-  "Base": "Healer",
+  "Base": "Fighter",
   "WeaponForge": "Valiance",
   "WeaponAwe": "Mana_Vamp",
-  "Cape": "Avarice",
+  "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
  "paladin high lord": {
@@ -1408,8 +1415,8 @@
  },
  "phantom chronomancer": {
   "Base": "Wizard",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
   "Helm": "Examen"
  },
@@ -1449,10 +1456,10 @@
   "Helm": "Anima"
  },
  "psionic mindbreaker": {
-  "Base": "Wizard",
-  "WeaponForge": "Ravenous",
+  "Base": "Lucky",
+  "WeaponForge": "Dauntless",
   "WeaponAwe": "Spiral_Carve",
-  "Cape": "Vainglory",
+  "Cape": "Lament",
   "Helm": "Pneuma"
  },
  "pumpkin lord": {
@@ -1471,10 +1478,10 @@
  },
  "quantum chronomancer": {
   "Base": "Lucky",
-  "WeaponForge": "Ravenous",
-  "WeaponAwe": "Spiral_Carve",
-  "Cape": "Vainglory",
-  "Helm": "Anima"
+  "WeaponForge": "Smite",
+  "WeaponAwe": "Health_Vamp",
+  "Cape": "Lament",
+  "Helm": "Forge"
  },
  "ranger": {
   "Base": "Lucky",
@@ -1505,11 +1512,11 @@
   "Helm": "Anima"
  },
  "royal battlemage": {
-  "Base": "Wizard",
-  "WeaponForge": "Elysium",
-  "WeaponAwe": "Awe_Blast",
+  "Base": "Lucky",
+  "WeaponForge": "Valiance",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
-  "Helm": "Pneuma"
+  "Helm": "Anima"
  },
  "royal vampire lord": {
   "Base": "Wizard",
@@ -1540,11 +1547,11 @@
   "Helm": "Anima"
  },
  "scarlet sorceress": {
-  "Base": "Wizard",
+  "Base": "Lucky",
   "WeaponForge": "Valiance",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Lament",
-  "Helm": "Pneuma"
+  "Helm": "Examen"
  },
  "scion of flames": {
   "Base": "Wizard",
@@ -1590,10 +1597,10 @@
  },
  "shadowscythe general": {
   "Base": "Lucky",
-  "WeaponForge": "Dauntless",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "shadowstalker of time": {
   "Base": "Lucky",
@@ -1618,10 +1625,10 @@
  },
  "shaman": {
   "Base": "Wizard",
-  "WeaponForge": "Elysium",
+  "WeaponForge": "Ravenous",
   "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
-  "Helm": "Pneuma"
+  "Helm": "Examen"
  },
  "silver paladin": {
   "Base": "Lucky",
@@ -1689,16 +1696,16 @@
  "swordmaster": {
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
-  "WeaponAwe": "Spiral_Carve",
-  "Cape": "Vainglory",
-  "Helm": "Anima"
+  "WeaponAwe": "Mana_Vamp",
+  "Cape": "Lament",
+  "Helm": "Vim"
  },
  "swordmaster assassin": {
   "Base": "Lucky",
-  "WeaponForge": "Dauntless",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponForge": "Valiance",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "the collector": {
   "Base": "Wizard",
@@ -1717,7 +1724,7 @@
  "timekeeper": {
   "Base": "Lucky",
   "WeaponForge": "Lacerate",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Lament",
   "Helm": "Vim"
  },
@@ -1733,13 +1740,13 @@
   "WeaponForge": "Dauntless",
   "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
-  "Helm": "Anima"
+  "Helm": "Forge"
  },
  "timeless dark caster": {
   "Base": "Wizard",
-  "WeaponForge": "Acheron",
-  "WeaponAwe": "Awe_Blast",
-  "Cape": "Penitence",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Vainglory",
   "Helm": "Pneuma"
  },
  "troll spellsmith": {
@@ -1767,8 +1774,8 @@
   "Base": "Lucky",
   "WeaponForge": "Elysium",
   "WeaponAwe": "Mana_Vamp",
-  "Cape": "Forge",
-  "Helm": "Vim"
+  "Cape": "Vainglory",
+  "Helm": "Examen"
  },
  "unchained rocker": {
   "Base": "Lucky",
@@ -1787,7 +1794,7 @@
  "undead goat": {
   "Base": "Lucky",
   "WeaponForge": "Valiance",
-  "WeaponAwe": "Awe_Blast",
+  "WeaponAwe": "Mana_Vamp",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -1843,7 +1850,7 @@
  "verus doomknight": {
   "Base": "Lucky",
   "WeaponForge": "Dauntless",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -1857,7 +1864,7 @@
  "void highlord": {
   "Base": "Lucky",
   "WeaponForge": "Ravenous",
-  "WeaponAwe": "Spiral_Carve",
+  "WeaponAwe": "Awe_Blast",
   "Cape": "Vainglory",
   "Helm": "Anima"
  },
@@ -1912,9 +1919,30 @@
  },
  "yami no ronin": {
   "Base": "Lucky",
-  "WeaponForge": "Praxis",
-  "WeaponAwe": "Mana_Vamp",
+  "WeaponForge": "Dauntless",
+  "WeaponAwe": "Spiral_Carve",
   "Cape": "Vainglory",
   "Helm": "Vim"
+ },
+ "draco knight": {
+  "Base": "Wizard",
+  "WeaponForge": "Valiance",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Vainglory",
+  "Helm": "Forge"
+ },
+ "elemental warrior": {
+  "Base": "Lucky",
+  "WeaponForge": "Ravenous",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Vainglory",
+  "Helm": "Forge"
+ },
+ "glacial berserk": {
+  "Base": "Lucky",
+  "WeaponForge": "Valiance",
+  "WeaponAwe": "Spiral_Carve",
+  "Cape": "Vainglory",
+  "Helm": "Anima"
  }
 }

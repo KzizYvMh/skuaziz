@@ -84,6 +84,9 @@
     <DataTemplate DataType="vms:CurrentDropsViewModel">
       <views:CurrentDropsView />
     </DataTemplate>
+    <DataTemplate DataType="vms:UltraWikiViewModel">
+      <views:UltraWikiView />
+    </DataTemplate>
     <DataTemplate DataType="runtime:JunkItemsViewModel">
       <views:JunkItemsView />
     </DataTemplate>

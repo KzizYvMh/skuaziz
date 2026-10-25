@@ -21,7 +21,11 @@ public partial class CoreBotsViewModel : BotControlViewModelBase
         _selectedTab = CoreBotsTabs[0];
         _player = player;
         _dialogService = dialogService;
+        if (ClassEnhance is CBOClassEnhanceViewModel classEnhance)
+            classEnhance.SaveTarget = () => SaveInternal(showDialog: false);
     }
+
+    private CBOClassEnhanceViewModel? ClassEnhance => CoreBotsTabs.Select(t => t.Content).OfType<CBOClassEnhanceViewModel>().FirstOrDefault();
 
     protected override void OnActivated()
     {
@@ -170,6 +174,8 @@ public partial class CoreBotsViewModel : BotControlViewModelBase
     private void LoadProfile(string profile, bool resetIfMissing)
     {
         CurrentPlayer = profile;
+        if (ClassEnhance is CBOClassEnhanceViewModel classEnhance)
+            classEnhance.TargetAccount = profile;
 
         Dictionary<string, string>? values = ReadProfile(profile);
         // Don't show the previous account's values under a profile that has no file yet

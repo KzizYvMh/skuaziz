@@ -674,9 +674,42 @@ public class DialogService : IDialogService
             }
         };
 
+        // Plain notices (a single OK button) close on their own so a running
+        // bot is not left waiting on a dialog. Hovering pauses the countdown.
+        if (buttons.Length == 1 && buttons[0] == "OK" && buttonPanel.Children[0] is Button okButton)
+            StartAutoClose(dialog, okButton, () => clicked = "OK");
+
         dialog.Content = WrapWithShell(title, content);
         Show(dialog);
         return clicked;
+    }
+
+    private const int NoticeAutoCloseSeconds = 3;
+
+    private static void StartAutoClose(Window dialog, Button okButton, Action onAutoClose)
+    {
+        int remaining = NoticeAutoCloseSeconds;
+        okButton.Content = $"OK ({remaining})";
+
+        DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) =>
+        {
+            if (dialog.IsPointerOver)
+                return;
+
+            remaining--;
+            if (remaining > 0)
+            {
+                okButton.Content = $"OK ({remaining})";
+                return;
+            }
+
+            timer.Stop();
+            onAutoClose();
+            dialog.Close();
+        };
+        dialog.Opened += (_, _) => timer.Start();
+        dialog.Closed += (_, _) => timer.Stop();
     }
 
     private static Window CreateBaseDialog(string title)

@@ -58,6 +58,7 @@
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <EmbeddedResource Include="ClassEnhancePresets.json" LogicalName="ClassEnhancePresets.json" />
+        <EmbeddedResource Include="UltraWiki.json" LogicalName="UltraWiki.json" />
         <Content Include="AdvancedSkills.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

@@ -117,6 +117,7 @@ public static class Services
             new("Fast Travel", () => s.GetRequiredService<FastTravelViewModel>()),
             new("Current Drops", () => s.GetRequiredService<CurrentDropsViewModel>()),
             new("Junk Items", () => s.GetRequiredService<JunkItemsViewModel>()),
+            new("Ultra Wiki", () => s.GetRequiredService<UltraWikiViewModel>()),
             new("Runtime", () => s.GetRequiredService<RuntimeHelpersViewModel>()),
             new("Loader", () => s.GetRequiredService<LoaderViewModel>()),
             new("Grabber", () => s.GetRequiredService<GrabberViewModel>()),
@@ -178,6 +179,7 @@ public static class Services
         services.AddTransient<RegisteredQuestsViewModel>();
         services.AddTransient<CurrentDropsViewModel>();
         services.AddTransient<JunkItemsViewModel>();
+        services.AddTransient<UltraWikiViewModel>();
 
         services.AddThemeViewModels();
 

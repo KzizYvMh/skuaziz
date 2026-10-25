@@ -121,9 +121,29 @@ public partial class CBOClassEnhanceViewModel : ObservableObject, IManageCBOptio
         ApplyFilter();
     }
 
+    /// <summary>
+    /// Account whose options are shown (CoreBots profile). Another account is enhanced on the tab logged in to it.
+    /// </summary>
+    public string? TargetAccount { get; set; }
+
+    /// <summary>
+    /// Saves the shown options, so the tab of <see cref="TargetAccount"/> enhances with the current edits.
+    /// </summary>
+    public Action? SaveTarget { get; set; }
+
     [RelayCommand]
     private async Task Enhance()
     {
+        if (!string.IsNullOrEmpty(TargetAccount) && !TargetAccount.Equals(_player.Username, StringComparison.OrdinalIgnoreCase))
+        {
+            SaveTarget?.Invoke();
+            if (ConnectedAccounts.RequestEnhance(TargetAccount))
+                _dialogService.ShowMessageBox($"Enhance sent to the tab of {TargetAccount}.", "Enhance");
+            else
+                _dialogService.ShowMessageBox($"{TargetAccount} is not logged in on any open tab.", "Enhance");
+            return;
+        }
+
         if (_manager.ScriptRunning)
         {
             _dialogService.ShowMessageBox("Stop the running script before enhancing.", "Enhance");
