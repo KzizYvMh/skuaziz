@@ -40,15 +40,24 @@ public class FlashUtil : IFlashUtil
 
     public static void PreloadSwf()
     {
-        if (_cachedSwf == null && File.Exists("skua.swf"))
+        try
         {
-            _cachedSwf = File.ReadAllBytes("skua.swf");
+            if (_cachedSwf != null)
+                return;
+
+            string swfPath = Path.Combine(AppContext.BaseDirectory, "skua.swf");
+            if (File.Exists(swfPath))
+                _cachedSwf = File.ReadAllBytes(swfPath);
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Failed to preload skua.swf: {ex}");
         }
     }
 
     public void InitializeFlash()
     {
-        const string swfPath = "skua.swf";
+        string swfPath = Path.Combine(AppContext.BaseDirectory, "skua.swf");
         if (!File.Exists(swfPath))
         {
             MessageBox.Show(
@@ -322,6 +331,10 @@ public class FlashUtil : IFlashUtil
 #else
 public class FlashUtil : IFlashUtil
 {
+    public static void PreloadSwf()
+    {
+    }
+
     public void Dispose()
     {
         throw new NotImplementedException();

@@ -34,14 +34,14 @@ public static class ThemeResourceApplicator
 
     private static readonly Dictionary<IntPtr, (bool isDark, Color caption, Color text)> _appliedTitleBars = new();
 
-    public static void ApplyTitleBarTheme(Application app, bool isDark)
+    public static void ApplyTitleBarTheme(Application app, bool isDark, Color? accentColor = null, Color? accentTextColor = null)
     {
         if (!OperatingSystem.IsWindows())
             return;
 
         if (!Dispatcher.UIThread.CheckAccess())
         {
-            Dispatcher.UIThread.Post(() => ApplyTitleBarTheme(app, isDark));
+            Dispatcher.UIThread.Post(() => ApplyTitleBarTheme(app, isDark, accentColor, accentTextColor));
             return;
         }
 
@@ -49,12 +49,12 @@ public static class ThemeResourceApplicator
         {
             foreach (Window window in desktop.Windows)
             {
-                ApplyTitleBarTheme(window, isDark);
+                ApplyTitleBarTheme(window, isDark, accentColor, accentTextColor);
             }
         }
     }
 
-    public static void ApplyTitleBarTheme(Window window, bool? isDarkTheme = null)
+    public static void ApplyTitleBarTheme(Window window, bool? isDarkTheme = null, Color? accentColor = null, Color? accentTextColor = null)
     {
         bool isDark = isDarkTheme ?? (window.ActualThemeVariant == ThemeVariant.Dark || Application.Current?.RequestedThemeVariant != ThemeVariant.Light);
         ThemeVariant targetVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
@@ -71,7 +71,7 @@ public static class ThemeResourceApplicator
             onOpened = (s, e) =>
             {
                 window.Opened -= onOpened;
-                ApplyTitleBarTheme(window, isDark);
+                ApplyTitleBarTheme(window, isDark, accentColor, accentTextColor);
             };
             window.Opened += onOpened;
             return;
@@ -82,16 +82,22 @@ public static class ThemeResourceApplicator
 
         try
         {
-            if (Application.Current?.Resources.ThemeDictionaries.TryGetValue(isDark ? ThemeVariant.Dark : ThemeVariant.Light, out var provider) == true
-                && provider is IResourceDictionary dict)
-            {
-                if (dict.TryGetValue("SkuaSurfaceAltBrush", out var sBrush) && sBrush is ISolidColorBrush scb)
-                    captionColor = scb.Color;
-                if (dict.TryGetValue("SkuaTextBrush", out var tBrush) && tBrush is ISolidColorBrush tcb)
-                    textColor = tcb.Color;
-            }
+            // Resolve through the window so Avalonia selects resources for this window's
+            // active theme variant instead of reading the application dictionary directly.
+            if (window.TryFindResource("SkuaSurfaceAltBrush", out object? surfaceBrush) && surfaceBrush is ISolidColorBrush surface)
+                captionColor = surface.Color;
+            if (window.TryFindResource("SkuaTextBrush", out object? foregroundBrush) && foregroundBrush is ISolidColorBrush foreground)
+                textColor = foreground.Color;
         }
-        catch { }
+        catch
+        {
+            // Keep safe system defaults if a custom theme omits title-bar resources.
+        }
+
+        if (accentColor is Color selectedAccent)
+            captionColor = selectedAccent;
+        if (accentTextColor is Color selectedAccentText)
+            textColor = selectedAccentText;
 
         ApplyNativeTitleBar(hwnd, isDark, captionColor, textColor);
     }
@@ -158,14 +164,9 @@ public static class ThemeResourceApplicator
         SetOrUpdateBrush(app.Resources, "SkuaAccentHoverBrush", Lighten(primary, 0.1));
         SetOrUpdateBrush(app.Resources, "SkuaAccentPressedBrush", Darken(primary, 0.12));
 
-        // Fluent controls (ToggleSwitch, etc.) otherwise follow the Windows accent color instead of the theme.
-        SetOrUpdateColor(app.Resources, "SystemAccentColor", primary);
-        SetOrUpdateColor(app.Resources, "SystemAccentColorLight1", Lighten(primary, 0.1));
-        SetOrUpdateColor(app.Resources, "SystemAccentColorLight2", Lighten(primary, 0.2));
-        SetOrUpdateColor(app.Resources, "SystemAccentColorLight3", Lighten(primary, 0.3));
-        SetOrUpdateColor(app.Resources, "SystemAccentColorDark1", Darken(primary, 0.1));
-        SetOrUpdateColor(app.Resources, "SystemAccentColorDark2", Darken(primary, 0.2));
-        SetOrUpdateColor(app.Resources, "SystemAccentColorDark3", Darken(primary, 0.3));
+        // Fluent controls (CheckBox, RadioButton, ToggleSwitch, Slider, ProgressBar, checked
+        // ToggleButton, TabItem pipe, TextBox focus) read the OS accent unless these are set.
+        ApplyFluentAccent(app, primary, primaryForeground);
         SetOrUpdateBrush(app.Resources, "ToggleSwitchFillOn", primary);
         SetOrUpdateBrush(app.Resources, "ToggleSwitchFillOnPointerOver", Lighten(primary, 0.1));
         SetOrUpdateBrush(app.Resources, "ToggleSwitchFillOnPressed", Darken(primary, 0.12));
@@ -177,6 +178,10 @@ public static class ThemeResourceApplicator
         Color selectionDark = Color.FromArgb(0x66, primary.R, primary.G, primary.B);
         bool useDarkSelection = isDarkTheme ?? false;
         SetOrUpdateBrush(app.Resources, "SkuaSelectionBrush", useDarkSelection ? selectionDark : selectionLight);
+
+        // Selected/on fill for tabs, toggles, rows, cards and chips; the strong one is its hover.
+        SetOrUpdateBrush(app.Resources, "SkuaAccentTintBrush", Color.FromArgb(0x24, primary.R, primary.G, primary.B));
+        SetOrUpdateBrush(app.Resources, "SkuaAccentTintStrongBrush", Color.FromArgb(0x38, primary.R, primary.G, primary.B));
 
         Color tagBg = Color.FromArgb(0x22, primary.R, primary.G, primary.B);
         Color tagBgHover = Color.FromArgb(0x3B, primary.R, primary.G, primary.B);
@@ -233,6 +238,30 @@ public static class ThemeResourceApplicator
         Color secondaryForeground = ParseColorSafe(secondaryForegroundHex, primaryForeground);
 
         ApplyAccentBrushes(app, primary, primaryForeground, secondary, secondaryForeground, isDarkTheme);
+    }
+
+    private static readonly string[] FluentOnAccentBrushKeys =
+    [
+        "CheckBoxCheckGlyphForegroundChecked", "CheckBoxCheckGlyphForegroundCheckedPointerOver", "CheckBoxCheckGlyphForegroundCheckedPressed",
+        "CheckBoxCheckGlyphForegroundIndeterminate", "CheckBoxCheckGlyphForegroundIndeterminatePointerOver", "CheckBoxCheckGlyphForegroundIndeterminatePressed",
+        "RadioButtonCheckGlyphFill", "RadioButtonCheckGlyphFillPointerOver", "RadioButtonCheckGlyphFillPressed",
+        "ToggleButtonForegroundChecked", "ToggleButtonForegroundCheckedPointerOver", "ToggleButtonForegroundCheckedPressed",
+        "ToggleSwitchKnobFillOn", "ToggleSwitchKnobFillOnPointerOver", "ToggleSwitchKnobFillOnPressed"
+    ];
+
+    private static void ApplyFluentAccent(Application app, Color primary, Color primaryForeground)
+    {
+        // Glyphs drawn on an accent fill use the theme's text-on-accent colour, not Fluent's fixed white.
+        foreach (string key in FluentOnAccentBrushKeys)
+            SetOrUpdateBrush(app.Resources, key, primaryForeground);
+
+        SetOrUpdateColor(app.Resources, "SystemAccentColor", primary);
+        SetOrUpdateColor(app.Resources, "SystemAccentColorLight1", Lighten(primary, 0.1));
+        SetOrUpdateColor(app.Resources, "SystemAccentColorLight2", Lighten(primary, 0.2));
+        SetOrUpdateColor(app.Resources, "SystemAccentColorLight3", Lighten(primary, 0.3));
+        SetOrUpdateColor(app.Resources, "SystemAccentColorDark1", Darken(primary, 0.15));
+        SetOrUpdateColor(app.Resources, "SystemAccentColorDark2", Darken(primary, 0.3));
+        SetOrUpdateColor(app.Resources, "SystemAccentColorDark3", Darken(primary, 0.45));
     }
 
     private static void SetOrUpdateBrush(IResourceDictionary dict, string key, Color color)

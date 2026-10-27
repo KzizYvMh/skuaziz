@@ -5,15 +5,15 @@
              x:DataType="vms:ScriptLoaderViewModel"
              x:Class="Skua.App.Avalonia.Views.ScriptLoaderView">
   
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="10" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12" RowSpacing="10">
         
         <!-- 1. Header Status Card -->
         <Border Grid.Row="0"
                 Background="{DynamicResource SkuaSurfaceBrush}"
                 BorderBrush="{DynamicResource SkuaBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="6"
-                Padding="12,8">
+                CornerRadius="10"
+                Padding="14,10">
             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                 <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                     <TextBlock Text="LOADED SCRIPT"
@@ -38,7 +38,19 @@
                         VerticalAlignment="Center"
                         ToolTip.Tip="{Binding ScriptErrorToolTip}">
                     <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                        <Ellipse Width="6" Height="6" Fill="#10B981" VerticalAlignment="Center" />
+                        <!-- Status dot: muted when idle/loaded, green running, amber paused/compiling, red on error -->
+                        <Ellipse Width="6" Height="6" VerticalAlignment="Center"
+                                 Classes.running="{Binding ScriptStatus, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='[Running]'}"
+                                 Classes.paused="{Binding ScriptStatus, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='[Paused]'}"
+                                 Classes.compiling="{Binding ScriptStatus, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Compiling...'}"
+                                 Classes.error="{Binding ScriptStatus, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='[Error]'}">
+                            <Ellipse.Styles>
+                                <Style Selector="Ellipse"><Setter Property="Fill" Value="{DynamicResource SkuaMutedTextBrush}" /></Style>
+                                <Style Selector="Ellipse.running"><Setter Property="Fill" Value="{DynamicResource SkuaSuccessBrush}" /></Style>
+                                <Style Selector="Ellipse.paused, Ellipse.compiling"><Setter Property="Fill" Value="{DynamicResource SkuaWarningBrush}" /></Style>
+                                <Style Selector="Ellipse.error"><Setter Property="Fill" Value="{DynamicResource SkuaDangerBrush}" /></Style>
+                            </Ellipse.Styles>
+                        </Ellipse>
                         <TextBlock FontSize="10"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource SkuaTextBrush}"
@@ -58,7 +70,7 @@
             <!-- Load Script -->
             <Button Grid.Row="0" Grid.Column="0"
                     Classes="skua-button"
-                    Height="32"
+                    Height="34"
                     Padding="8,0"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"

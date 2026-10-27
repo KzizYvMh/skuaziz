@@ -29,7 +29,7 @@ namespace Skua.Manager.Avalonia.ViewModels;
 public sealed partial class AccountManagerViewModel : BotControlViewModelBase
 {
     // Constructor and Dependencies
-    public AccountManagerViewModel(ISettingsService settingsService, IDialogService dialogService, IFileDialogService fileService)
+    public AccountManagerViewModel(ISettingsService settingsService, IDialogService dialogService, IFileDialogService fileService, IScriptManager scriptManager)
         : base("Accounts")
     {
         IMessengerExtensions.Register<AccountManagerViewModel, RemoveAccountMessage>(Messenger, this, (r, m) => r._RemoveAccount(m.Account));
@@ -40,12 +40,13 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
         IMessengerExtensions.Register<AccountManagerViewModel, RemoveAccountFromGroupMessage>(Messenger, this, (r, m) => r._RemoveAccountFromGroup(m.Group, m.Account));
         IMessengerExtensions.Register<AccountManagerViewModel, ReplaceAccountInGroupMessage>(Messenger, this, (r, m) => r._ReplaceAccountInGroup(m.Group, m.CurrentAccount, m.ReplacementAccount));
         IMessengerExtensions.Register<AccountManagerViewModel, RefreshAccountDisplayNamesMessage>(Messenger, this, (r, _) => r.RefreshAccountDisplayNames());
-        IMessengerExtensions.Register<AccountManagerViewModel, StartGroupMessage>(Messenger, this, (r, m) => r._StartGroup(m.Group, m.WithScript));
+        IMessengerExtensions.Register<AccountManagerViewModel, StartGroupMessage>(Messenger, this, (r, m) => r._StartGroup(m.Group, m.WithScript, m.NewWindow));
         StrongReferenceMessenger.Default.Register<AccountManagerViewModel, LoadScriptMessage, int>(this,
             (int)MessageChannels.ScriptStatus, (r, m) => r.HandleLoadScript(m));
         _settingsService = settingsService;
         _dialogService = dialogService;
         _fileService = fileService;
+        _scriptManager = scriptManager;
         ServerList = new();
         Task.Run(async () => await _GetServers());
         Accounts = new();
@@ -114,6 +115,7 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IDialogService _dialogService;
     private readonly IFileDialogService _fileService;
+    private readonly IScriptManager _scriptManager;
 
     // Collections
     public RangedObservableCollection<IAccountItemViewModel> Accounts { get; }
@@ -195,10 +197,13 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
     // Script and Server Properties
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ScriptName))]
+    [NotifyPropertyChangedFor(nameof(HasScriptPath))]
     private string _scriptPath = string.Empty;
 
     // The full path is long and mostly the same folder; the view shows the script name and keeps the path in the tooltip
     public string ScriptName => string.IsNullOrEmpty(ScriptPath) ? "No script selected" : System.IO.Path.GetFileNameWithoutExtension(ScriptPath);
+
+    public bool HasScriptPath => !string.IsNullOrWhiteSpace(ScriptPath);
 
     partial void OnScriptPathChanged(string value)
     {
@@ -278,59 +283,47 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
     [RelayCommand]
     public async Task StartAccounts()
     {
-        if (_isLaunching)
-            return;
+        await StartAccountBatch(Accounts.Where(acc => acc.UseCheck).ToList(), "selected accounts", StartWithScript);
+    }
 
-        try
-        {
-            _isLaunching = true;
-            _syncThemes = _settingsService.Get("syncTheme", false);
-            List<IAccountItemViewModel> selectedAccounts = Accounts.Where(acc => acc.UseCheck).ToList();
-            int launcherTarget = SelectedLauncherPid;
-            foreach (IAccountItemViewModel acc in selectedAccounts)
-            {
-                Process? process = _LaunchAcc(acc.Username, acc.Password, acc.DisplayName, StartWithScript, launcherTarget);
-                launcherTarget = _NextBatchLauncherTarget(launcherTarget, process);
-                await Task.Delay(1000);
-            }
-        }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"Error starting accounts: {ex.Message}");
-        }
-        finally
-        {
-            _isLaunching = false;
-            if (_pendingReload)
-            {
-                _pendingReload = false;
-                ScheduleReload();
-            }
-        }
+    [RelayCommand]
+    public async Task StartAccountsInNewWindow()
+    {
+        await StartAccountBatch(Accounts.Where(acc => acc.UseCheck).ToList(), "selected accounts", StartWithScript, true);
+    }
+
+    [RelayCommand]
+    public async Task StartAllAccountsInNewWindow()
+    {
+        await StartAccountBatch(Accounts.ToList(), "all accounts", StartWithScript, true);
     }
 
     [RelayCommand]
     public async Task StartAllAccounts()
     {
-        if (_isLaunching)
+        await StartAccountBatch(Accounts.ToList(), "all accounts", StartWithScript);
+    }
+
+    private async Task StartAccountBatch(List<IAccountItemViewModel> accounts, string batchName, bool runScript, bool newWindow = false)
+    {
+        if (_isLaunching || accounts.Count == 0)
             return;
 
         try
         {
             _isLaunching = true;
             _syncThemes = _settingsService.Get("syncTheme", false);
-            List<IAccountItemViewModel> allAccounts = Accounts.ToList();
-            int launcherTarget = SelectedLauncherPid;
-            foreach (IAccountItemViewModel acc in allAccounts)
+            int launcherTarget = newWindow ? NewLauncherTarget : SelectedLauncherPid;
+            foreach (IAccountItemViewModel account in accounts)
             {
-                Process? process = _LaunchAcc(acc.Username, acc.Password, acc.DisplayName, StartWithScript, launcherTarget);
+                Process? process = _LaunchAcc(account.Username, account.Password, account.DisplayName, runScript, launcherTarget);
                 launcherTarget = _NextBatchLauncherTarget(launcherTarget, process);
                 await Task.Delay(1000);
             }
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"Error starting all accounts: {ex.Message}");
+            Trace.WriteLine($"Error starting {batchName}{(newWindow ? " in a new window" : string.Empty)}: {ex.Message}");
         }
         finally
         {
@@ -492,7 +485,7 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
         return launcherTarget;
     }
 
-    private async void _StartGroup(IGroupItemViewModel group, bool withScript)
+    private async void _StartGroup(IGroupItemViewModel group, bool withScript, bool newWindow = false)
     {
         if (_isLaunching)
             return;
@@ -503,34 +496,8 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
             return;
         }
 
-        try
-        {
-            _isLaunching = true;
-            _syncThemes = _settingsService.Get("syncTheme", false);
-
-            bool runScript = withScript || StartWithScript;
-            List<IAccountItemViewModel> groupAccounts = group.Accounts.ToList();
-            int launcherTarget = SelectedLauncherPid;
-            foreach (IAccountItemViewModel account in groupAccounts)
-            {
-                Process? process = _LaunchAcc(account.Username, account.Password, account.DisplayName, runScript, launcherTarget);
-                launcherTarget = _NextBatchLauncherTarget(launcherTarget, process);
-                await Task.Delay(1000);
-            }
-        }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"Error starting group accounts: {ex.Message}");
-        }
-        finally
-        {
-            _isLaunching = false;
-            if (_pendingReload)
-            {
-                _pendingReload = false;
-                ScheduleReload();
-            }
-        }
+        bool runScript = withScript || StartWithScript;
+        await StartAccountBatch(group.Accounts.ToList(), $"group '{group.Name}'", runScript, newWindow);
     }
 
     private Process? _LaunchAcc(string username, string password, string? displayName = null, bool? withScript = null, int launcherTarget = DefaultLauncherTarget)
@@ -744,20 +711,33 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
 
     public void ApplyTagFilter()
     {
-        FilteredAccounts.Clear();
+        // Filter uses OR logic: shows accounts that have ANY of the selected tags
+        List<IAccountItemViewModel> target = _selectedTagFilters.Count == 0
+            ? Accounts.ToList()
+            : Accounts.Where(a => a.Tags.Any(t => _selectedTagFilters.Contains(t))).ToList();
 
-        if (_selectedTagFilters.Count == 0)
-        {
-            FilteredAccounts.AddRange(Accounts);
+        // Update in place: clearing and refilling rebuilt every row and threw the list back to the top
+        // each time the Manager got focus or a client saved settings.
+        if (FilteredAccounts.SequenceEqual(target))
             return;
+
+        for (int i = FilteredAccounts.Count - 1; i >= 0; i--)
+        {
+            if (!target.Contains(FilteredAccounts[i]))
+                FilteredAccounts.RemoveAt(i);
         }
 
-        // Filter uses OR logic: shows accounts that have ANY of the selected tags
-        IEnumerable<IAccountItemViewModel> filtered = Accounts.Where(a =>
-            a.Tags.Any(t => _selectedTagFilters.Contains(t))
-        );
+        for (int i = 0; i < target.Count; i++)
+        {
+            if (i < FilteredAccounts.Count && ReferenceEquals(FilteredAccounts[i], target[i]))
+                continue;
 
-        FilteredAccounts.AddRange(filtered);
+            int current = FilteredAccounts.IndexOf(target[i]);
+            if (current >= 0)
+                FilteredAccounts.Move(current, i);
+            else
+                FilteredAccounts.Insert(i, target[i]);
+        }
     }
 
     private void _UpdateFilteredTags()
@@ -1131,6 +1111,57 @@ public sealed partial class AccountManagerViewModel : BotControlViewModelBase
     }
 
     // Script Commands
+    /// <summary>
+    /// Opens the selected script's shared options editor in the Manager.
+    /// </summary>
+    [RelayCommand]
+    public async Task EditScriptOptions()
+    {
+        string scriptPath = ScriptPath;
+        if (string.IsNullOrWhiteSpace(scriptPath))
+        {
+            _dialogService.ShowMessageBox("Please select a script first.", "No Script Selected");
+            return;
+        }
+
+        if (!File.Exists(scriptPath))
+        {
+            _dialogService.ShowMessageBox($"Script file not found:\n{scriptPath}", "Script Not Found");
+            return;
+        }
+
+        try
+        {
+            _scriptManager.OverrideStorage = null;
+            _scriptManager.SetLoadedScript(scriptPath);
+            object? compiled = await Task.Run(() => _scriptManager.Compile(File.ReadAllText(scriptPath)));
+            if (compiled == null)
+            {
+                _dialogService.ShowMessageBox("Failed to compile script for configuration.", "Script Error");
+                return;
+            }
+
+            _scriptManager.LoadScriptConfig(compiled);
+            IScriptOptionContainer? config = _scriptManager.Config;
+            if (config != null && (config.Options.Count > 0 || config.MultipleOptions.Count > 0))
+            {
+                config.Configure();
+            }
+            else
+            {
+                _dialogService.ShowMessageBox("The loaded script has no options to configure.", "No Options");
+            }
+        }
+        catch (Exception ex)
+        {
+            _dialogService.ShowMessageBox($"Script cannot be configured as it has compilation errors:\n{ex.Message}", "Script Error");
+        }
+        finally
+        {
+            _scriptManager.OverrideStorage = null;
+        }
+    }
+
     [RelayCommand]
     public void ChangeScriptPath()
     {

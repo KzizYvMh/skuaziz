@@ -27,7 +27,7 @@ public class DialogService : IDialogService
     {
         if (!Dispatcher.UIThread.CheckAccess())
             return Dispatcher.UIThread.Invoke(() => ShowDialog(viewModel));
-        return ShowDialogInternal(viewModel, viewModel.GetType().Name);
+        return ShowDialogInternal(viewModel, DefaultTitle(viewModel));
     }
 
     public bool? ShowDialog<TViewModel>(TViewModel viewModel, string title) where TViewModel : class
@@ -37,11 +37,17 @@ public class DialogService : IDialogService
         return ShowDialogInternal(viewModel, title);
     }
 
+    // A dialog shown without a title uses its own (DialogViewModelBase.Title) instead of the view model's type name.
+    private static string DefaultTitle(object viewModel)
+    {
+        return viewModel is DialogViewModelBase { Title: { Length: > 0 } title } ? title : viewModel.GetType().Name;
+    }
+
     public bool? ShowDialog<TViewModel>(TViewModel viewModel, Action<TViewModel> callback) where TViewModel : class
     {
         if (!Dispatcher.UIThread.CheckAccess())
             return Dispatcher.UIThread.Invoke(() => ShowDialog(viewModel, callback));
-        bool? result = ShowDialogInternal(viewModel, viewModel.GetType().Name);
+        bool? result = ShowDialogInternal(viewModel, DefaultTitle(viewModel));
         if (result == true)
             callback?.Invoke(viewModel);
         return result;
@@ -180,8 +186,8 @@ public class DialogService : IDialogService
         };
 
         bool? result = null;
-        Button ok = new() { Content = "Save", MinWidth = 84, Classes = { "skua-button", "primary" } };
-        Button cancel = new() { Content = "Cancel", MinWidth = 84, IsCancel = true };
+        Button ok = new() { Content = "Save", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
+        Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         ok.IsDefault = true;
 
         ok.Click += (_, _) =>
@@ -236,8 +242,8 @@ public class DialogService : IDialogService
             input.TextChanged += (_, _) => input.Text = new string((input.Text ?? string.Empty).Where(char.IsDigit).ToArray());
 
         bool? result = null;
-        Button ok = new() { Content = "OK", MinWidth = 84 };
-        Button cancel = new() { Content = "Cancel", MinWidth = 84, IsCancel = true };
+        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
+        Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         ok.IsDefault = true;
         ok.Click += (_, _) =>
         {
@@ -285,8 +291,8 @@ public class DialogService : IDialogService
         };
 
         bool? result = null;
-        Button ok = new() { Content = "OK", MinWidth = 84 };
-        Button cancel = new() { Content = "Cancel", MinWidth = 84, IsCancel = true };
+        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
+        Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         ok.IsDefault = true;
         ok.Click += (_, _) =>
         {
@@ -351,8 +357,8 @@ public class DialogService : IDialogService
         };
 
         bool? result = null;
-        Button ok = new() { Content = "OK", MinWidth = 84 };
-        Button cancel = new() { Content = "Cancel", MinWidth = 84, IsCancel = true };
+        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
+        Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         ok.IsDefault = true;
         ok.Click += (_, _) =>
         {
@@ -417,7 +423,7 @@ public class DialogService : IDialogService
         {
             Content = "Save",
             MinWidth = 84,
-            Classes = { "skua-button", "primary" },
+            Classes = { "skua-button", "skua-primary" },
             IsDefault = true
         };
 
@@ -500,7 +506,7 @@ public class DialogService : IDialogService
     {
         Window dialog = CreateBaseDialog(title);
         bool? result = null;
-        Button ok = new() { Content = "OK", MinWidth = 84 };
+        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
         ok.IsDefault = true;
         ok.Click += (_, _) =>
         {
@@ -542,9 +548,17 @@ public class DialogService : IDialogService
         };
         foreach (string buttonText in buttons)
         {
-            Button button = new() { Content = buttonText, HorizontalAlignment = HorizontalAlignment.Stretch };
-            if (index == 0)
+            Button button = new() { Content = buttonText, HorizontalAlignment = HorizontalAlignment.Stretch, Classes = { "skua-button" } };
+            // Same rules as the client's message boxes: OK/Yes is the highlighted default (Enter), No/Cancel answers Esc.
+            if (buttonText is "OK" or "Yes" || (index == 0 && !buttons.Contains("OK") && !buttons.Contains("Yes")))
+            {
+                button.Classes.Add("skua-primary");
                 button.IsDefault = true;
+            }
+            else if (buttonText is "No" or "Cancel")
+            {
+                button.IsCancel = true;
+            }
             button.Click += (_, _) =>
             {
                 clicked = buttonText;
@@ -557,7 +571,8 @@ public class DialogService : IDialogService
         Button copyButton = new()
         {
             Content = "Copy",
-            HorizontalAlignment = HorizontalAlignment.Stretch
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Classes = { "skua-button" }
         };
         copyButton.Click += async (_, _) =>
         {
@@ -606,7 +621,7 @@ public class DialogService : IDialogService
             Title = title,
             Width = 420,
             SizeToContent = SizeToContent.Height,
-            Topmost = true,
+            CanResize = false,
             WindowStartupLocation = WindowStartupLocation.Manual,
             SystemDecorations = SystemDecorations.BorderOnly,
             ExtendClientAreaToDecorationsHint = true,

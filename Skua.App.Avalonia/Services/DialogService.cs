@@ -33,7 +33,7 @@ public class DialogService : IDialogService
     {
         if (!Dispatcher.UIThread.CheckAccess())
             return Dispatcher.UIThread.Invoke(() => ShowDialog(viewModel));
-        return ShowDialogInternal(viewModel, viewModel.GetType().Name);
+        return ShowDialogInternal(viewModel, DefaultTitle(viewModel));
     }
 
     public bool? ShowDialog<TViewModel>(TViewModel viewModel, string title) where TViewModel : class
@@ -43,11 +43,17 @@ public class DialogService : IDialogService
         return ShowDialogInternal(viewModel, title);
     }
 
+    // A dialog shown without a title uses its own (DialogViewModelBase.Title) instead of the view model's type name.
+    private static string DefaultTitle(object viewModel)
+    {
+        return viewModel is DialogViewModelBase { Title: { Length: > 0 } title } ? title : viewModel.GetType().Name;
+    }
+
     public bool? ShowDialog<TViewModel>(TViewModel viewModel, Action<TViewModel> callback) where TViewModel : class
     {
         if (!Dispatcher.UIThread.CheckAccess())
             return Dispatcher.UIThread.Invoke(() => ShowDialog(viewModel, callback));
-        bool? result = ShowDialogInternal(viewModel, viewModel.GetType().Name);
+        bool? result = ShowDialogInternal(viewModel, DefaultTitle(viewModel));
         if (result == true)
             callback?.Invoke(viewModel);
         return result;
@@ -136,7 +142,7 @@ public class DialogService : IDialogService
         }
 
         bool? result = null;
-        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "primary" } };
+        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
         Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         ok.IsDefault = true;
 
@@ -274,7 +280,7 @@ public class DialogService : IDialogService
             e.Handled = true;
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
 
-        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "primary" } };
+        Button ok = new() { Content = "OK", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
         Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         ok.IsDefault = true;
 
@@ -376,7 +382,7 @@ public class DialogService : IDialogService
         };
         help[!TextBlock.ForegroundProperty] = new global::Avalonia.Markup.Xaml.MarkupExtensions.DynamicResourceExtension("SkuaMutedTextBrush");
 
-        Button confirm = new() { Content = "Confirm", MinWidth = 84, Classes = { "skua-button", "primary" } };
+        Button confirm = new() { Content = "Confirm", MinWidth = 84, Classes = { "skua-button", "skua-primary" } };
         Button cancel = new() { Content = "Cancel", MinWidth = 84, Classes = { "skua-button" }, IsCancel = true };
         confirm.IsDefault = true;
 
@@ -490,7 +496,7 @@ public class DialogService : IDialogService
         {
             Content = "Save",
             MinWidth = 84,
-            Classes = { "skua-button", "primary" },
+            Classes = { "skua-button", "skua-primary" },
             IsDefault = true
         };
 
@@ -586,6 +592,15 @@ public class DialogService : IDialogService
     {
         Window dialog = CreateBaseDialog(title);
         dialog.Width = (message.Length > 200 || message.Contains('\n')) ? 560 : 460;
+        dialog.SizeToContent = SizeToContent.Manual;
+        dialog.CanResize = true;
+
+        double maxScreenHeight = 720;
+        var screen = Skua.Shared.Avalonia.Services.WindowPlacementHelper.GetTargetScreen(dialog);
+        if (screen != null)
+            maxScreenHeight = Math.Max(160, screen.WorkingArea.Height / screen.Scaling * 0.85);
+        dialog.MinHeight = 160;
+        dialog.MaxHeight = maxScreenHeight;
 
         SelectableTextBlock label = new()
         {
@@ -594,11 +609,12 @@ public class DialogService : IDialogService
             FontSize = 13,
             LineHeight = 20
         };
+        label.Measure(new Size(dialog.Width - 34, double.PositiveInfinity));
+        dialog.Height = Math.Min(maxScreenHeight, Math.Max(dialog.MinHeight, label.DesiredSize.Height + 112));
 
         ScrollViewer scrollViewer = new()
         {
             Content = label,
-            MaxHeight = 360,
             HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
         };
@@ -606,8 +622,7 @@ public class DialogService : IDialogService
         Button copyButton = new()
         {
             Content = "Copy",
-            MinWidth = 74,
-            Classes = { "skua-button" }
+            Classes = { "skua-button", "w84" }
         };
         copyButton.Click += async (_, _) =>
         {
@@ -638,7 +653,7 @@ public class DialogService : IDialogService
 
             if (text == "OK" || text == "Yes")
             {
-                button.Classes.Add("primary");
+                button.Classes.Add("skua-primary");
                 button.IsDefault = true;
             }
             else if (text == "Cancel" || text == "No")
@@ -663,16 +678,16 @@ public class DialogService : IDialogService
         footerPanel.Children.Add(copyButton);
         footerPanel.Children.Add(buttonPanel);
 
-        StackPanel content = new()
+        Grid content = new()
         {
             Margin = new Thickness(16),
-            Spacing = 16,
-            Children =
-            {
-                scrollViewer,
-                footerPanel
-            }
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 16
         };
+        Grid.SetRow(scrollViewer, 0);
+        Grid.SetRow(footerPanel, 1);
+        content.Children.Add(scrollViewer);
+        content.Children.Add(footerPanel);
 
         // Plain notices (a single OK button) close on their own so a running
         // bot is not left waiting on a dialog. Hovering pauses the countdown.
@@ -724,7 +739,7 @@ public class DialogService : IDialogService
             ExtendClientAreaToDecorationsHint = true,
             ExtendClientAreaChromeHints = global::Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome,
             ExtendClientAreaTitleBarHeightHint = 32,
-            Topmost = true,
+            CanResize = false,
             ShowActivated = true,
             Classes = { "skua" }
         };

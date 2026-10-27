@@ -31,7 +31,8 @@ public partial class CoreBotsViewModel : BotControlViewModelBase
     {
         // Always open on the account logged in here
         SetProfileSilently(_player.Username);
-        Load();
+        // Opening the window while logged out just shows "Not Logged In"; only the Load button explains why.
+        LoadInternal(showDialog: false);
     }
 
     protected override void OnDeactivated()
@@ -159,9 +160,15 @@ public partial class CoreBotsViewModel : BotControlViewModelBase
     [RelayCommand]
     private void Load()
     {
+        LoadInternal(showDialog: true);
+    }
+
+    private void LoadInternal(bool showDialog)
+    {
         if (string.IsNullOrEmpty(ProfileName))
         {
-            _dialogService.ShowMessageBox("Login first so that we can fetch your username to load the options file.", "Load");
+            if (showDialog)
+                _dialogService.ShowMessageBox("Login first so that we can fetch your username to load the options file.", "Load");
             CurrentPlayer = string.Empty;
             return;
         }
@@ -197,8 +204,43 @@ public partial class CoreBotsViewModel : BotControlViewModelBase
         if (!File.Exists(filePath))
             return null;
 
+        return ReadValues(File.ReadAllLines(filePath));
+    }
+
+    // Refreshes the class and equipment lists from the logged-in character's inventory, keeping the
+    // selections already made in the window.
+    [RelayCommand]
+    private void LoadCharacter()
+    {
+        if (string.IsNullOrEmpty(_player.Username))
+        {
+            _dialogService.ShowMessageBox("Login first so that we can read your character's classes and equipment.", "Load Character");
+            return;
+        }
+
+        StringBuilder current = new();
+        foreach (TabItemViewModel tab in CoreBotsTabs)
+        {
+            if (tab.Content is IManageCBOptions cbo)
+                cbo.Save(current);
+        }
+        Dictionary<string, string> selections = ReadValues(current.ToString().Split(Environment.NewLine));
+
+        foreach (TabItemViewModel tab in CoreBotsTabs)
+        {
+            if (tab.Content is CBOClassSelectViewModel classSelect)
+                classSelect.ReloadClassesCommand.Execute(null);
+            else if (tab.Content is CBOClassEquipmentViewModel equipment)
+                equipment.RefreshInventoryCommand.Execute(null);
+        }
+
+        SetValues(selections);
+    }
+
+    private static Dictionary<string, string> ReadValues(IEnumerable<string> lines)
+    {
         Dictionary<string, string> optionsDict = new();
-        foreach (string option in File.ReadAllLines(filePath))
+        foreach (string option in lines)
         {
             ReadOnlySpan<string> value = option.Split(_separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (value.Length == 2)

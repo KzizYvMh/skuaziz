@@ -48,9 +48,32 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
     private const int WM_NCACTIVATE = 0x0086;
+    private const int WM_WINDOWPOSCHANGED = 0x0047;
+    private const int WM_DPICHANGED = 0x02E0;
+    private const int WM_GETDPISCALEDSIZE = 0x02E4;
+    private const int WM_SKUA_CHILD_DPICHANGED = 0x0400 + 441;
 
     private SubclassProc? _subclassProc;
+    private bool _scalingCheckQueued;
 #endif
     private const int WM_SKUA_JUMP_MAP = 0x0400 + 449;
     private const int WM_SKUA_SET_OPTION = 0x0400 + 450;
@@ -59,9 +82,10 @@ public partial class MainWindow : Window
     private const int WM_SKUA_ARMY_SCHEDULER_STOP = 0x0400 + 455;
     private const int WM_SKUA_CHECK_LOGIN = 0x0400 + 456;
     private const int WM_SKUA_JUMP_PLAYER = 0x0400 + 457;
+    private const int WM_SKUA_JUMP_HOUSE = 0x0400 + 464;
     private const int WM_SKUA_LOGIN = 0x0400 + 447;
     private const int WM_SKUA_GRIDVIEW = 0x0400 + 444;
-    private const int WM_SKUA_SET_HOST = 0x0400 + 441;
+    private const int WM_SKUA_SET_HOST = 0x0400 + 442;
     private const int WM_SKUA_AUTO_ATTACK = 0x0400 + 459;
     private const int WM_SKUA_OPEN_BANK = 0x0400 + 460;
 
@@ -101,6 +125,7 @@ public partial class MainWindow : Window
         _startup = Ioc.Default.GetRequiredService<SkuaStartupHandler>();
         
         DataContext = _mainViewModel;
+        Skua.Shared.Avalonia.Controls.Shell.WindowTitleBar.SetArtworkPath(Ioc.Default.GetRequiredService<ISettingsService>().GetShared().TitleBarArtworkPath);
         MainMenuBar.DataContext = _mainMenuVm;
         ConfigureMainMenu();
         RegisterLifecycleHandlers();
@@ -407,6 +432,43 @@ public partial class MainWindow : Window
             return new IntPtr(1);
         }
 
+        // The tab host sizes this window to its tab area. On a monitor with another scale, keep that size instead of
+        // letting Windows scale it, and tell the host so it places the window again.
+        if (uMsg == WM_GETDPISCALEDSIZE && HotKeys.HostHwnd != IntPtr.Zero && lParam != IntPtr.Zero && GetWindowRect(hWnd, out RECT current))
+        {
+            Marshal.WriteInt32(lParam, 0, current.Right - current.Left);
+            Marshal.WriteInt32(lParam, 4, current.Bottom - current.Top);
+            return (IntPtr)1;
+        }
+        else if (uMsg == WM_DPICHANGED)
+        {
+            // Avalonia updates its size in DIPs only on WM_SIZE, which doesn't come when the size in pixels stays
+            // the same, so its next layout would resize the window to the old DIP size at the new scale. Give it
+            // the new DIP size of the suggested rect first.
+            uint newDpi = (uint)(wParam.ToInt64() & 0xFFFF);
+            if (newDpi > 0 && lParam != IntPtr.Zero)
+            {
+                RECT suggested = Marshal.PtrToStructure<RECT>(lParam);
+                Width = (suggested.Right - suggested.Left) * 96.0 / newDpi;
+                Height = (suggested.Bottom - suggested.Top) * 96.0 / newDpi;
+            }
+
+            IntPtr result = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+            if (HotKeys.HostHwnd != IntPtr.Zero)
+                PostMessage(HotKeys.HostHwnd, WM_SKUA_CHILD_DPICHANGED, hWnd, new IntPtr(Environment.ProcessId));
+            return result;
+        }
+        else if (uMsg == WM_WINDOWPOSCHANGED)
+        {
+            IntPtr result = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+            if (!_scalingCheckQueued)
+            {
+                _scalingCheckQueued = true;
+                Dispatcher.UIThread.Post(() => SyncScalingWithWindowDpi(hWnd), DispatcherPriority.Background);
+            }
+            return result;
+        }
+
         if (uMsg == WM_SKUA_GRIDVIEW)
         {
             Dispatcher.UIThread.Post(() =>
@@ -482,6 +544,21 @@ public partial class MainWindow : Window
             });
             return IntPtr.Zero;
         }
+        else if (uMsg == WM_SKUA_JUMP_HOUSE)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    // Same packet CoreBots uses to join the player's own house.
+                    var player = Ioc.Default.GetRequiredService<IScriptPlayer>();
+                    if (player.LoggedIn && !string.IsNullOrWhiteSpace(player.Username))
+                        Ioc.Default.GetRequiredService<IScriptSend>().Packet($"%xt%zm%house%1%{player.Username}%");
+                }
+                catch { }
+            });
+            return IntPtr.Zero;
+        }
         else if (uMsg == WM_SKUA_JUMP_PLAYER)
         {
             Task.Run(() => 
@@ -539,6 +616,7 @@ public partial class MainWindow : Window
                 case 7: options.SkipCutscenes = value; break;
                 case 8: options.UseFunctionBasedSkills = value; break;
                 case 9: options.StreamerMode = value; break;
+                case 10: options.AggroMonsters = value; break;
                 case 99:
                     var sm = Ioc.Default.GetRequiredService<Skua.App.Avalonia.ViewModels.ScriptLoaderViewModel>();
                     var scheduler = Ioc.Default.GetRequiredService<Skua.Shared.Avalonia.ViewModels.ScriptSchedulerViewModel>();
@@ -769,6 +847,36 @@ public partial class MainWindow : Window
         }
         
         return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+
+    // Avalonia's Position setter reads the new monitor's DPI into the window without raising ScalingChanged, so
+    // the mouse can be mapped at one scale while layout and drawing use another (clicks land beside the buttons).
+    // When either scale disagrees with the DPI Windows gives this window, replay WM_DPICHANGED with that DPI and
+    // the current rect: Avalonia then updates both, and the window keeps its size.
+    private void SyncScalingWithWindowDpi(IntPtr hWnd)
+    {
+        _scalingCheckQueued = false;
+        uint dpi = GetDpiForWindow(hWnd);
+        if (dpi == 0 || !GetWindowRect(hWnd, out RECT current))
+            return;
+
+        // On Windows, DesktopScaling is the scale Avalonia maps the mouse with; RenderScaling is the one layout uses.
+        double windowScaling = dpi / 96.0;
+        double inputScaling = DesktopScaling;
+        if (Math.Abs(RenderScaling - windowScaling) < 0.001 && Math.Abs(inputScaling - windowScaling) < 0.001)
+            return;
+
+        Trace.WriteLine($"SkuaZZ scaling resync: layout {RenderScaling}, input {inputScaling}, window DPI {dpi}");
+        IntPtr rect = Marshal.AllocHGlobal(Marshal.SizeOf<RECT>());
+        try
+        {
+            Marshal.StructureToPtr(current, rect, false);
+            SendMessage(hWnd, WM_DPICHANGED, new IntPtr((int)((dpi << 16) | dpi)), rect);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(rect);
+        }
     }
 #endif
 }

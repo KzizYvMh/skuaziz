@@ -8,11 +8,17 @@
         x:Class="Skua.App.Avalonia.Views.TabbedHostWindow"
         Classes="skua"
         Title="SkuaZZ" Icon="avares://Skua.Shared.Avalonia/Assets/SkuaIcon.ico" Height="700" Width="1100"
-        WindowStartupLocation="CenterScreen" Background="{DynamicResource SkuaPageBrush}">
-    <Grid RowDefinitions="Auto,*">
-        
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource SkuaPageBrush}"
+        SystemDecorations="BorderOnly"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="32">
+    <Grid RowDefinitions="32,Auto,*">
+        <sharedShell:WindowTitleBar x:Name="MainTitleBar" Grid.Row="0" TitleText="SkuaZZ" />
+
         <!-- Top Tab Bar & Army Bar -->
-        <Border Grid.Row="0"
+        <Border Grid.Row="1"
                 Background="{DynamicResource SkuaSurfaceBrush}"
                 BorderBrush="{DynamicResource SkuaBorderBrush}"
                 BorderThickness="0,0,0,1"
@@ -64,19 +70,19 @@
                                     <Setter Property="CornerRadius" Value="6,6,0,0" />
                                     <Setter Property="FontSize" Value="12" />
                                 </Style>
-                                <Style Selector="TabItem /template/ Border#PART_LayoutRoot, TabItem /template/ Border#PART_RootBorder">
+                                <Style Selector="TabItem /template/ Border#PART_LayoutRoot">
                                     <Setter Property="Background" Value="{DynamicResource SkuaSurfaceAltBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource SkuaBorderBrush}" />
                                     <Setter Property="BorderThickness" Value="1,1,1,0" />
                                     <Setter Property="CornerRadius" Value="6,6,0,0" />
                                 </Style>
-                                <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot, TabItem:pointerover /template/ Border#PART_RootBorder">
+                                <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot">
                                     <Setter Property="Background" Value="{DynamicResource SkuaNavHoverBrush}" />
                                 </Style>
                                 <Style Selector="TabItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
                                     <Setter Property="TextElement.Foreground" Value="{DynamicResource SkuaTextBrush}" />
                                 </Style>
-                                <Style Selector="TabItem:selected /template/ Border#PART_LayoutRoot, TabItem:selected /template/ Border#PART_RootBorder">
+                                <Style Selector="TabItem:selected /template/ Border#PART_LayoutRoot">
                                     <Setter Property="Background" Value="{DynamicResource SkuaSurfaceBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource SkuaAccentBrush}" />
                                     <Setter Property="BorderThickness" Value="1,2,1,0" />
@@ -86,7 +92,7 @@
                                     <Setter Property="TextElement.Foreground" Value="{DynamicResource SkuaTextBrush}" />
                                     <Setter Property="TextElement.FontWeight" Value="SemiBold" />
                                 </Style>
-                                <Style Selector="TabItem /template/ Border#PART_SelectedPipe">
+                                <Style Selector="TabItem:selected /template/ Border#PART_SelectedPipe">
                                     <Setter Property="IsVisible" Value="False" />
                                 </Style>
                                 <Style Selector="TabControl /template/ ItemsPresenter#PART_ItemsPresenter">
@@ -118,7 +124,7 @@
                             Cursor="Hand"
                             IsVisible="False"
                             ToolTip.Tip="Scroll tabs right (more tabs hidden)">
-                        <materialIcons:MaterialIcon Kind="ChevronRight" Width="14" Height="14" Foreground="{DynamicResource SkuaAccentBrush}" />
+                        <materialIcons:MaterialIcon Kind="ChevronRight" Width="14" Height="14" Foreground="{DynamicResource SkuaTextBrush}" />
                     </Button>
                 </Grid>
 
@@ -171,7 +177,7 @@
                                 </MenuItem>
                                 <MenuItem x:Name="MenuStopScripts" Header="Stop All Scripts" Click="MenuItem_StopAllScripts_Click">
                                     <MenuItem.Icon>
-                                        <materialIcons:MaterialIcon Kind="StopCircleOutline" Width="14" Height="14" Foreground="#EF4444" />
+                                        <materialIcons:MaterialIcon Kind="StopCircleOutline" Width="14" Height="14" Foreground="{DynamicResource SkuaDangerBrush}" />
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem x:Name="MenuLoadScripts" Header="Load Script to All" Click="MenuItem_LoadScriptAll_Click">
@@ -192,7 +198,7 @@
                                 </MenuItem>
                                 <MenuItem x:Name="MenuStopAutoAttack" Header="Stop Auto-Attack for All" Click="MenuItem_StopAutoAttackAll_Click">
                                     <MenuItem.Icon>
-                                        <materialIcons:MaterialIcon Kind="StopCircleOutline" Width="14" Height="14" Foreground="#EF4444" />
+                                        <materialIcons:MaterialIcon Kind="StopCircleOutline" Width="14" Height="14" Foreground="{DynamicResource SkuaDangerBrush}" />
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
@@ -215,6 +221,11 @@
                                 <MenuItem Header="Jump All to Player..." Click="MenuItem_JumpPlayer_Click">
                                     <MenuItem.Icon>
                                         <materialIcons:MaterialIcon Kind="AccountArrowRightOutline" Width="14" Height="14" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Jump All to House" Click="MenuItem_JumpHouse_Click">
+                                    <MenuItem.Icon>
+                                        <materialIcons:MaterialIcon Kind="HomeOutline" Width="14" Height="14" />
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="Accept Quest to All..." Click="MenuItem_AcceptQuest_Click">
@@ -252,6 +263,12 @@
                                             <materialIcons:MaterialIcon Kind="ArrowExpandAll" Width="14" Height="14" />
                                         </MenuItem.Icon>
                                     </MenuItem>
+                                    <MenuItem Header="Aggro Monsters" ToggleType="CheckBox" StaysOpenOnClick="True" IsChecked="{Binding AggroMonsters, Mode=TwoWay}"
+                                              ToolTip.Tip="Provoke every monster in the room. Can keep you in combat and block quest turn-ins.">
+                                        <MenuItem.Icon>
+                                            <materialIcons:MaterialIcon Kind="Target" Width="14" Height="14" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
                                     <MenuItem Header="Streamer Mode" ToggleType="CheckBox" StaysOpenOnClick="True" IsChecked="{Binding StreamerMode, Mode=TwoWay}">
                                         <MenuItem.Icon>
                                             <materialIcons:MaterialIcon Kind="Broadcast" Width="14" Height="14" />
@@ -283,7 +300,7 @@
         </Border>
         
         <!-- Game Instance Host Container -->
-        <Grid Grid.Row="1" Background="{DynamicResource SkuaPageBrush}">
+        <Grid Grid.Row="2" Background="{DynamicResource SkuaPageBrush}">
             <StackPanel x:Name="LoadingIndicator" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
                 <TextBlock Text="Loading Game Instance..." Foreground="{DynamicResource SkuaTextBrush}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,6" />
                 <TextBlock Text="Please wait while the game client initializes" Foreground="{DynamicResource SkuaMutedTextBrush}" FontSize="12" HorizontalAlignment="Center" />
