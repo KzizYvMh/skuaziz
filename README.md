@@ -61,6 +61,8 @@ powershell -ExecutionPolicy Bypass -File .\package-build.ps1
 
 > **Note:** The Manager's updater checks [KzizYvMh/skuaziz](https://github.com/KzizYvMh/skuaziz/releases) releases.
 
+**Game player:** the game runs in a separate program, the Skua build of [Mugetsu](https://github.com/mugetsu-aqw/mugetsu) (a modified [Ruffle](https://ruffle.rs)), shipped in the `player` folder. It is licensed under the GPL-3.0, separately from SkuaZZ; its full source is at [retr0gr4d3/skua-mugetsu](https://github.com/retr0gr4d3/skua-mugetsu), and its license texts are in `player\LICENSES`.
+
 ---
 
 ## Credits
@@ -68,6 +70,7 @@ powershell -ExecutionPolicy Bypass -File .\package-build.ps1
 * **[auqw/skua](https://github.com/auqw/skua)** — Original Skua framework and botting API.
 * **[ArrowDev](https://github.com/ArrowDev123/Skua) (BlackArrow on Discord)** — Early Avalonia port.
 * **[NinjaXz/VibeSkua](https://github.com/NinjaXz/VibeSkua)** — The Avalonia client overhaul this fork is based on.
+* **[retr0gr4d3/Bonxie](https://github.com/retr0gr4d3/Bonxie)** — Ruffle/Mugetsu game player integration.
 
 ---
 

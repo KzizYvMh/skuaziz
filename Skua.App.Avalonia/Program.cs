@@ -121,7 +121,6 @@ internal static class Program
         try
         {
             ClientFileSources.EnsureInitialized();
-            System.Threading.Tasks.Task.Run(() => Skua.App.Avalonia.Flash.FlashUtil.PreloadSwf());
             VelopackApp.Build().Run();
             if (Skua.Shared.Avalonia.Utils.AppShortcutHelper.IsInstalled())
             {

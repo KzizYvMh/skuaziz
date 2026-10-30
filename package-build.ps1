@@ -116,6 +116,16 @@ foreach ($Target in $Targets) {
         Copy-Item (Join-Path $FFDecDir "*") $TargetFFDecDir -Recurse -Force
     }
 
+    # 7b. Copy the game player (downloaded by the Skua.App.Avalonia build)
+    $PlayerSourceDir = Join-Path $AppBin "player"
+    if (Test-Path $PlayerSourceDir) {
+        $TargetPlayerDir = Join-Path $Target "player"
+        New-Item -ItemType Directory -Path $TargetPlayerDir -Force | Out-Null
+        Copy-Item (Join-Path $PlayerSourceDir "*") $TargetPlayerDir -Recurse -Force
+    } else {
+        throw "The game player is missing from $PlayerSourceDir; the build should have downloaded it."
+    }
+
     # 8. Copy Plugins
     $PluginSourceDir = Join-Path $RootDir "Skua.Plugin.DailyTracker\bin\Release\net10.0"
     if (Test-Path $PluginSourceDir) {

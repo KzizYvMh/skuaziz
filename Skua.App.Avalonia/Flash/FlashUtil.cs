@@ -1,168 +1,178 @@
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.Messaging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Skua.Core.Flash;
 using Skua.Core.Interfaces;
+using Skua.Core.Messaging;
+using Skua.Core.Utils;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Dynamic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace Skua.App.Avalonia.Flash;
 
-#if IS_WINDOWS
-using AxShockwaveFlashObjects;
-using CommunityToolkit.Mvvm.DependencyInjection;
-using CommunityToolkit.Mvvm.Messaging;
-using Skua.Core.Flash;
-using Skua.Core.Messaging;
-using Skua.Core.Utils;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
-using System.Threading;
-using System.Windows.Forms;
-
+/// <summary>
+/// Runs skua.swf in the Skua build of Mugetsu (a fast desktop Ruffle, see github.com/retr0gr4d3/skua-mugetsu) and
+/// bridges ExternalInterface to it. The player connects back over a loopback TCP socket and both sides send one JSON
+/// object per line: <c>{id,name,args}</c> calls a callback of the SWF and is answered with <c>{id,r}</c>, and
+/// <c>{ev,args}</c> is an <c>ExternalInterface.call</c> from the SWF.
+/// </summary>
 public class FlashUtil : IFlashUtil
 {
+    private static readonly TimeSpan CallTimeout = TimeSpan.FromSeconds(10);
+
+    private readonly IMessenger _messenger;
+    private readonly Lazy<IScriptManager> _lazyManager;
+    private readonly ConcurrentDictionary<int, TaskCompletionSource<JObject>> _pending = new();
+    private readonly object _sendLock = new();
+    private TcpListener? _listener;
+    private Process? _player;
+    private StreamWriter? _bridge;
+    private int _nextId;
+
     public FlashUtil(IMessenger messenger, Lazy<IScriptManager> manager)
     {
         _messenger = messenger;
         _lazyManager = manager;
     }
 
-    private readonly IMessenger _messenger;
-    private readonly Lazy<IScriptManager> _lazyManager;
-    private AxShockwaveFlash? Flash;
-
     public event FlashCallHandler? FlashCall;
 
-    private static byte[]? _cachedSwf;
+    /// <summary>Native window the player draws in as a child window; 0 gives it a window of its own.</summary>
+    public nint ParentWindow { get; set; }
 
-    public static void PreloadSwf()
-    {
-        try
-        {
-            if (_cachedSwf != null)
-                return;
+    private static string SwfPath => Path.Combine(AppContext.BaseDirectory, "skua.swf");
 
-            string swfPath = Path.Combine(AppContext.BaseDirectory, "skua.swf");
-            if (File.Exists(swfPath))
-                _cachedSwf = File.ReadAllBytes(swfPath);
-        }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"Failed to preload skua.swf: {ex}");
-        }
-    }
+    private static string PlayerPath => Path.Combine(AppContext.BaseDirectory, "player", OperatingSystem.IsWindows() ? "Mugetsu.exe" : "Mugetsu");
 
     public void InitializeFlash()
     {
-        string swfPath = Path.Combine(AppContext.BaseDirectory, "skua.swf");
-        if (!File.Exists(swfPath))
+        if (!File.Exists(SwfPath))
+            throw new FileNotFoundException("Missing skua.swf. Build the AS3 client first so the game content can load.");
+        if (!File.Exists(PlayerPath))
+            throw new FileNotFoundException($"Missing the game player ({PlayerPath}). Rebuild SkuaZZ so it downloads the player.");
+
+        if (_listener is null)
         {
-            MessageBox.Show(
-                "Missing skua.swf. Build the AS3 client first so Skua.App.Avalonia can load the game content.",
-                "Missing game content",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Exclamation);
-            Environment.Exit(0);
+            _listener = new TcpListener(IPAddress.Loopback, 0);
+            _listener.Start();
+            _ = Task.Run(AcceptLoopAsync);
+        }
+
+        StopPlayer();
+        ProcessStartInfo start = new(PlayerPath) { UseShellExecute = false };
+        start.ArgumentList.Add("--skua-bridge");
+        start.ArgumentList.Add($"127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}");
+        if (ParentWindow != 0)
+        {
+            start.ArgumentList.Add("--skua-parent");
+            start.ArgumentList.Add(ParentWindow.ToString(CultureInfo.InvariantCulture));
+        }
+        start.ArgumentList.Add(SwfPath);
+        _player = Process.Start(start);
+    }
+
+    private void StopPlayer()
+    {
+        try
+        {
+            if (_player is { HasExited: false })
+                _player.Kill();
+        }
+        catch { /* already gone */ }
+        _player?.Dispose();
+        _player = null;
+    }
+
+    private async Task AcceptLoopAsync()
+    {
+        while (_listener is { } listener)
+        {
+            TcpClient client;
+            try
+            {
+                client = await listener.AcceptTcpClientAsync();
+            }
+            catch
+            {
+                return;
+            }
+            _ = Task.Run(() => RunBridgeAsync(client));
+        }
+    }
+
+    private async Task RunBridgeAsync(TcpClient client)
+    {
+        using (client)
+        {
+            client.NoDelay = true;
+            NetworkStream stream = client.GetStream();
+            StreamWriter writer = new(stream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
+            // A restarted player connects anew; whatever the old one still owed will never come.
+            Interlocked.Exchange(ref _bridge, writer)?.Dispose();
+            FailPending();
+
+            try
+            {
+                using StreamReader reader = new(stream, Encoding.UTF8);
+                while (await reader.ReadLineAsync() is { } line)
+                    Receive(JObject.Parse(line));
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException or JsonException)
+            {
+                Trace.WriteLine($"Game player bridge closed: {ex.Message}");
+            }
+            finally
+            {
+                if (Interlocked.CompareExchange(ref _bridge, null, writer) == writer)
+                    FailPending();
+            }
+        }
+    }
+
+    private void Receive(JObject msg)
+    {
+        if (msg["id"] is { } id)
+        {
+            if (_pending.TryRemove((int)id, out TaskCompletionSource<JObject>? tcs))
+                tcs.TrySetResult(msg);
             return;
         }
 
-        try
-        {
-            if (!EoLHook.IsHooked)
-                EoLHook.Hook();
-
-            CleanupOldFlash();
-
-            AxShockwaveFlash flash = new();
-            flash.BeginInit();
-            flash.Name = "flash";
-            flash.Dock = DockStyle.Fill;
-            flash.TabIndex = 0;
-            flash.FlashCall += CallHandler;
-
-            _messenger.Send<FlashChangedMessage<AxShockwaveFlash>>(new(flash));
-            flash.EndInit();
-            flash.WMode = "window";
-            flash.ScaleMode = 0;
-            flash.CtlScale = "ShowAll";
-            Flash = flash;
-            byte[] swf = _cachedSwf ?? File.ReadAllBytes(swfPath);
-            using MemoryStream stream = new();
-            using BinaryWriter writer = new(stream);
-            writer.Write(8 + swf.Length);
-            writer.Write(1432769894);
-            writer.Write(swf.Length);
-            writer.Write(swf);
-            writer.Seek(0, SeekOrigin.Begin);
-            flash.OcxState = new AxHost.State(stream, 1, false, null);
-        }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"Flash initialization error: {ex}");
-            if (MessageBox.Show($"Please, uninstall and then reinstall CleanFlash via the Gif provided \r\nDo you want view the instructional Gif?", "Clean Flash missing/installed incorrectly", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes)
-                Ioc.Default.GetRequiredService<IProcessService>().OpenLink("https://imgur.com/ztsLYZ1");
-            Environment.Exit(0);
-        }
-        finally
-        {
-            EoLHook.Unhook();
-        }
-    }
-
-    private void CleanupOldFlash()
-    {
-        if (Flash == null) return;
-
-        Flash.FlashCall -= CallHandler;
-
-        try
-        {
-            Flash.Stop();
-        }
-        catch { /* ignored */ }
-
-        object? ocx = null;
-        try
-        {
-            ocx = Flash.GetOcx();
-        }
-        catch { /* ignored */ }
-
-        Flash.Dispose();
-        Flash = null;
-
-        if (ocx != null)
+        string function = (string)msg["ev"]!;
+        object[] args = msg["args"] is JArray arr ? arr.Select(FromJson).ToArray() : [];
+        // The ActiveX player raised these on the UI thread, and handlers still expect that.
+        Dispatcher.UIThread.Post(() =>
         {
             try
             {
-                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(ocx);
+                FlashCall?.Invoke(function, args);
             }
-            catch { /* ignored */ }
-        }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Flash call handler for '{function}' failed: {ex}");
+            }
+        });
     }
 
-    private void CallHandler(object sender, _IShockwaveFlashEvents_FlashCallEvent e)
+    // ponytail: fails every pending call, so one sent to a new player in the instant it connects returns default too.
+    private void FailPending()
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(e?.request))
-                return;
-
-            XElement el = XElement.Parse(e.request);
-            string? function = el.Attribute("name")?.Value;
-            if (string.IsNullOrEmpty(function))
-                return;
-
-            object[] args = el.Elements().Select(x => FromFlashXml(x)).ToArray();
-            FlashCall?.Invoke(function, args);
-        }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"Flash CallHandler exception: {ex.Message}");
-        }
+        foreach (int id in _pending.Keys)
+            if (_pending.TryRemove(id, out TaskCompletionSource<JObject>? tcs))
+                tcs.TrySetResult(new JObject());
     }
 
     public string Call(string function, params object[] args)
@@ -196,42 +206,35 @@ public class FlashUtil : IFlashUtil
 
         try
         {
-            if (Flash is null)
+            if (_bridge is not { } writer)
                 return default!;
 
-            StringBuilder req = new StringBuilder().Append($"<invoke name=\"{function}\" returntype=\"xml\">");
-            if (args.Length > 0)
+            int id = Interlocked.Increment(ref _nextId);
+            TaskCompletionSource<JObject> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _pending[id] = tcs;
+            try
             {
-                req.Append("<arguments>");
-                args.ForEach(o => req.Append(ToFlashXml(o)));
-                req.Append("</arguments>");
-            }
-            req.Append("</invoke>");
+                string request = JsonConvert.SerializeObject(new { id, name = function, args = args.Select(ToJs) });
+                lock (_sendLock)
+                    writer.WriteLine(request);
 
-            string? result = null;
-            const int maxRetries = 2;
-            for (int attempt = 0; attempt <= maxRetries; attempt++)
+                if (!tcs.Task.Wait(CallTimeout))
+                    throw new TimeoutException($"No answer from the game player within {CallTimeout.TotalSeconds}s.");
+            }
+            finally
             {
-                try
-                {
-                    result = Flash.CallFunction(req.ToString());
-                    break;
-                }
-                catch (COMException comEx) when (attempt < maxRetries && IsTransientComError(comEx.HResult))
-                {
-                    Thread.Sleep(10 * (attempt + 1));
-                }
+                _pending.TryRemove(id, out _);
             }
 
-            if (string.IsNullOrWhiteSpace(result))
-                return default!;
-
-            XElement el = XElement.Parse(result);
-            if (el.FirstNode is null)
-                return default!;
-
-            object? value = Convert.ChangeType(el.FirstNode.ToString(), type);
-            return value ?? default!;
+            // Old ActiveX results came back as text, so callers still convert from a string.
+            string? result = tcs.Task.Result["r"] switch
+            {
+                null or { Type: JTokenType.Null } => null,
+                JValue { Value: bool b } => b ? "true" : "false",
+                JValue v => Convert.ToString(v.Value, CultureInfo.InvariantCulture),
+                JToken t => t.ToString(Formatting.None)
+            };
+            return result is null ? default! : Convert.ChangeType(result, type, CultureInfo.InvariantCulture);
         }
         catch (Exception e)
         {
@@ -241,43 +244,44 @@ public class FlashUtil : IFlashUtil
         }
     }
 
-    private static bool IsTransientComError(int hresult)
+    /// <summary>Maps an argument to what the ActiveX player accepted: null, bools, numbers, objects, arrays, else text.</summary>
+    private static object? ToJs(object? o)
     {
-        return hresult == unchecked((int)0x8001010A) || hresult == unchecked((int)0x80010001);
+        return o switch
+        {
+            null or bool or double or float or long or int or string => o,
+            ExpandoObject e => e.ToDictionary(kvp => kvp.Key, kvp => ToJs(kvp.Value)),
+            Array a => a.Cast<object?>().Select(ToJs).ToArray(),
+            _ => o.ToString()
+        };
     }
 
-    public static string ToFlashXml(object o)
+    private static object FromJson(JToken t)
     {
-        switch (o)
+        switch (t.Type)
         {
-            case null:
-                return "<null/>";
+            case JTokenType.Integer:
+            case JTokenType.Float:
+                return int.TryParse(t.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int i) ? i : (float)t;
 
-            case bool _:
-                return $"<{o.ToString()!.ToLower()}/>";
+            case JTokenType.Boolean:
+                return (bool)t;
 
-            case double _:
-            case float _:
-            case long _:
-            case int _:
-                return $"<number>{o}</number>";
+            case JTokenType.Null:
+            case JTokenType.Undefined:
+                return null!;
 
-            case ExpandoObject _:
-                StringBuilder sb = new StringBuilder().Append("<object>");
-                foreach (KeyValuePair<string, object> kvp in (o as IDictionary<string, object>)!)
-                    sb.Append($"<property id=\"{kvp.Key}\">{ToFlashXml(kvp.Value)}</property>");
-                return sb.Append("</object>").ToString();
+            case JTokenType.Array:
+                return t.Select(FromJson).ToArray();
+
+            case JTokenType.Object:
+                IDictionary<string, object> d = new ExpandoObject();
+                foreach (JProperty p in ((JObject)t).Properties())
+                    d[p.Name] = FromJson(p.Value);
+                return d;
 
             default:
-                if (o is Array)
-                {
-                    StringBuilder _sb = new StringBuilder().Append("<array>");
-                    int k = 0;
-                    foreach (object el in (o as Array)!)
-                        _sb.Append($"<property id=\"{k++}\">{ToFlashXml(el)}</property>");
-                    return _sb.Append("</array>").ToString();
-                }
-                return $"<string>{SecurityElement.Escape(o.ToString())}</string>";
+                return (string)t!;
         }
     }
 
@@ -317,58 +321,10 @@ public class FlashUtil : IFlashUtil
 
     public void Dispose()
     {
-        try
-        {
-            CleanupOldFlash();
-        }
-        catch { /* ignored */ }
-        finally
-        {
-            EoLHook.Unhook();
-        }
+        StopPlayer();
+        _listener?.Stop();
+        _listener = null;
+        _bridge?.Dispose();
+        FailPending();
     }
 }
-#else
-public class FlashUtil : IFlashUtil
-{
-    public static void PreloadSwf()
-    {
-    }
-
-    public void Dispose()
-    {
-        throw new NotImplementedException();
-    }
-
-    public event FlashCallHandler? FlashCall;
-    public void InitializeFlash()
-    {
-        throw new NotImplementedException();
-    }
-
-    public string? Call(string function, params object[] args)
-    {
-        throw new NotImplementedException();
-    }
-
-    public T? Call<T>(string function, params object[] args)
-    {
-        throw new NotImplementedException();
-    }
-
-    public object? Call(string function, Type type, params object[] args)
-    {
-        throw new NotImplementedException();
-    }
-
-    public object FromFlashXml(XElement el)
-    {
-        throw new NotImplementedException();
-    }
-
-    public IFlashObject<T> CreateFlashObject<T>(string path)
-    {
-        throw new NotImplementedException();
-    }
-}
-#endif

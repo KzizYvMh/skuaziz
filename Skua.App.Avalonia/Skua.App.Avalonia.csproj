@@ -23,15 +23,6 @@
         <DefineConstants>$(DefineConstants);IS_WINDOWS</DefineConstants>
     </PropertyGroup>
 
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-        <Reference Include="AxInterop.ShockwaveFlashObjects">
-            <HintPath>Assemblies\AxInterop.ShockwaveFlashObjects.dll</HintPath>
-        </Reference>
-        <Reference Include="Interop.ShockwaveFlashObjects">
-            <HintPath>Assemblies\Interop.ShockwaveFlashObjects.dll</HintPath>
-        </Reference>
-    </ItemGroup>
-
     <ItemGroup>
         <PackageReference Include="Velopack" />
         <PackageReference Include="Avalonia" />
@@ -43,7 +34,6 @@
         <PackageReference Include="Material.Avalonia" />
         <PackageReference Include="Material.Icons" />
         <PackageReference Include="Material.Icons.Avalonia" />
-        <PackageReference Include="CoreHook" />
     </ItemGroup>
 
     <ItemGroup>
@@ -65,25 +55,36 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Assemblies\corehook32.dll" Link="corehook32.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Assemblies\corehook64.dll" Link="corehook64.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Assemblies\coreload32.dll" Link="coreload32.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Assemblies\coreload64.dll" Link="coreload64.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="..\Skua.AS3\skua\bin\skua.swf" Link="skua.swf" Condition="Exists('..\Skua.AS3\skua\bin\skua.swf')">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+
+    <!--
+      The game player: the Skua build of Mugetsu (GPL-3.0, source at https://github.com/retr0gr4d3/skua-mugetsu).
+      It is downloaded once into player\<version>\ at the repository root and copied to the output's player\ folder.
+      To try a local build of the player instead, pass -p:SkuaPlayerLocal=<folder with Mugetsu.exe>.
+    -->
+    <PropertyGroup>
+        <SkuaPlayerVersion>1.6.0-skua.1</SkuaPlayerVersion>
+        <SkuaPlayerZip>Mugetsu-$(SkuaPlayerVersion)-windows.zip</SkuaPlayerZip>
+        <SkuaPlayerUrl>https://github.com/retr0gr4d3/skua-mugetsu/releases/download/v$(SkuaPlayerVersion)/$(SkuaPlayerZip)</SkuaPlayerUrl>
+        <SkuaPlayerCache>$(MSBuildThisFileDirectory)..\player\$(SkuaPlayerVersion)</SkuaPlayerCache>
+        <SkuaPlayerDir Condition="'$(SkuaPlayerLocal)' != ''">$(SkuaPlayerLocal)</SkuaPlayerDir>
+        <SkuaPlayerDir Condition="'$(SkuaPlayerLocal)' == ''">$(SkuaPlayerCache)\Mugetsu</SkuaPlayerDir>
+    </PropertyGroup>
+
+    <Target Name="DownloadSkuaPlayer" Condition="'$(SkuaPlayerLocal)' == '' And !Exists('$(SkuaPlayerDir)\Mugetsu.exe')">
+        <DownloadFile SourceUrl="$(SkuaPlayerUrl)" DestinationFolder="$(SkuaPlayerCache)" />
+        <Unzip SourceFiles="$(SkuaPlayerCache)\$(SkuaPlayerZip)" DestinationFolder="$(SkuaPlayerCache)" />
+    </Target>
+
+    <Target Name="AddSkuaPlayer" BeforeTargets="AssignTargetPaths" DependsOnTargets="DownloadSkuaPlayer">
+        <ItemGroup>
+            <_SkuaPlayerFile Include="$(SkuaPlayerDir)\**" />
+            <None Include="@(_SkuaPlayerFile)" Link="player\%(_SkuaPlayerFile.RecursiveDir)%(_SkuaPlayerFile.Filename)%(_SkuaPlayerFile.Extension)" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <None Update="app.manifest">

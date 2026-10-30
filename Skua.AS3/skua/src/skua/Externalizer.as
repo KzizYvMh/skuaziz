@@ -148,8 +148,9 @@ public class Externalizer {
         ExternalInterface.addCallback(name, func);
     }
 
+    // Ruffle evaluates the function name as a JS expression, so names like "pre-load" go through one fixed entry point.
     public function call(name:String, ...rest):* {
-        return ExternalInterface.call(name, rest);
+        return ExternalInterface.call("skuaCall", name, rest);
     }
 
     public function debug(message:String):void {
